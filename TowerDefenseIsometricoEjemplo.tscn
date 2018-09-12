@@ -1,0 +1,178 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://Tilemap/isometric.res" type="TileSet" id=1]
+
+[sub_resource type="GDScript" id=1]
+
+script/source = "extends Node2D
+
+
+
+var direccionRandom = Vector2(0,1) #Indicamos que la direccion inicial es hacia abajo
+var distanciaPasillo = randi()%6+6
+var cantidadPasillo = 18
+var tamMapaX = 64
+var tamMapaY = 64
+var origenCamino = Vector2(tamMapaX,0) #multiplico por 4 porque es el escalado de Camera2D
+
+var x = -1
+var y = -1
+var x2 = 0
+var y2 = 0
+var puntoEscan = Vector2()
+var dirAnterior = Vector2()
+var dirActual = direccionRandom
+var direccion = {
+	arriba = Vector2(0,-1),
+	abajo = Vector2(0,1),
+	derecha = Vector2(1,0),
+	izquierda = Vector2(-1,0)
+}
+
+func _ready():
+	generarMapa()
+	generarMuros()
+
+func _input(event):
+	if Input.is_action_just_pressed(\"ui_right\"):
+		$Camera2D.global_position.x += 64
+	elif Input.is_action_just_pressed(\"ui_left\"):
+		$Camera2D.global_position.x -= 64
+	elif Input.is_action_just_pressed(\"ui_up\"):
+		$Camera2D.global_position.y -= 64
+	elif Input.is_action_just_pressed(\"ui_down\"):
+		$Camera2D.global_position.y += 64
+	if Input.is_action_just_pressed(\"ui_accept\"): #Enter
+		get_tree().reload_current_scene()
+
+func generarMapa():
+	for pasilloNo in range(cantidadPasillo):
+		for pasillo in range(distanciaPasillo):
+			if !escanTerreno():
+				$TileMap.set_cell(origenCamino.x,origenCamino.y,0)
+				origenCamino += direccionRandom
+		distanciaPasillo = randi()%3+4
+		match direccionRandom:
+			direccion.arriba:
+					dirActual = dirAnterior
+			direccion.abajo:
+				dirAnterior = dirActual
+				if randi()%2 == 0:
+					dirActual = direccion.derecha
+				else:
+					dirActual = direccion.izquierda
+			direccion.derecha:
+				dirAnterior = dirActual
+				if randi()%2 == 0:
+					dirActual = direccion.arriba
+				else:
+					dirActual = direccion.abajo
+			direccion.izquierda:
+				dirAnterior = dirActual
+				if randi()%2 == 0:
+					dirActual = direccion.arriba
+					distanciaPasillo -= 2
+				else:
+					dirActual = direccion.abajo
+		direccionRandom = Vector2(dirActual.x,dirActual.y)
+
+func escanTerreno():
+	var terreno = false
+	x = -1
+	y = -1
+	puntoEscan = origenCamino + direccionRandom * 3
+	for i in range(9):
+		if $TileMap.get_cell(puntoEscan.x + x , puntoEscan.y + y) == 0:
+			terreno = true
+		if x >= 1:
+			x = -1
+			y += 1
+		else:
+			x += 1
+	return terreno
+
+func generarMuros():
+	x = -tamMapaX
+	y = -tamMapaY
+	for i in range(tamMapaX*2 * tamMapaY*2):
+		if !$TileMap.get_cell(x,y) == 0:
+			$TileMap.set_cell(x,y,1)
+		if x >= tamMapaX*2:
+			x = 0
+			y +=1
+		else:
+			x += 1
+#	var terrenoPuesto = $TileMap.get_used_cells_by_id(0)
+#	for i in range(terrenoPuesto.size()): #numero de tiles aprox en pantalla (80*4 * 18*4)
+#		var tile = terrenoPuesto[i]
+#		x = tile.x
+#		y = tile.y
+#		if $TileMap.get_cell(x,y) == 0:
+#			x2 = -1
+#			y2 = -1
+#			for a in range(9):
+#				if $TileMap.get_cell(x+x2,y+y2) == -1:
+#					$TileMap.set_cell(x+x2,y+y2,1)
+#				x2 += 1
+#				if x2 > 1:
+#					x2 = -1
+#					y2 += 1
+#		x += 1
+#		if x >= 80:
+#			x = 0
+#			y += 1"
+
+[node name="Node2D" type="Node2D" index="0"]
+
+script = SubResource( 1 )
+_sections_unfolded = [ "Transform" ]
+
+[node name="TileMap" type="TileMap" parent="." index="0"]
+
+mode = 1
+tile_set = ExtResource( 1 )
+cell_size = Vector2( 64, 32 )
+cell_quadrant_size = 16
+cell_custom_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
+cell_half_offset = 2
+cell_tile_origin = 0
+cell_y_sort = false
+cell_clip_uv = false
+collision_use_kinematic = false
+collision_friction = 1.0
+collision_bounce = 0.0
+collision_layer = 1
+collision_mask = 1
+occluder_light_mask = 1
+format = 1
+tile_data = PoolIntArray(  )
+_sections_unfolded = [ "Cell" ]
+
+[node name="Camera2D" type="Camera2D" parent="." index="1"]
+
+offset = Vector2( 2080, 960 )
+anchor_mode = 1
+rotating = false
+current = true
+zoom = Vector2( 2, 2 )
+limit_left = -10000000
+limit_top = -10000000
+limit_right = 10000000
+limit_bottom = 10000000
+limit_smoothed = false
+drag_margin_h_enabled = true
+drag_margin_v_enabled = true
+smoothing_enabled = false
+smoothing_speed = 5.0
+offset_v = 0.0
+offset_h = 0.0
+drag_margin_left = 0.2
+drag_margin_top = 0.2
+drag_margin_right = 0.2
+drag_margin_bottom = 0.2
+editor_draw_screen = true
+editor_draw_limits = false
+editor_draw_drag_margin = false
+_sections_unfolded = [ "Transform" ]
+
+
